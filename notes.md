@@ -22,4 +22,3 @@ Prints the list of each submitter and which way they voted and the yes no tally 
 
 
 
-

@@ -25,6 +25,11 @@ async function postToResponseUrl(responseUrl, message) {
 }
 
 export default async function handler(req, res) {
+  // Health check - visit /api/slack in browser to test deployment
+  if (req.method === "GET") {
+    return res.json({ status: "ok", message: "Nomic Slack bot is running" });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -88,7 +93,7 @@ export default async function handler(req, res) {
       // Send public notification
       await postToResponseUrl(responseUrl, {
         response_type: "in_channel",
-        text: "1 vote",
+        text: "a vote has been cast",
       });
 
       return;

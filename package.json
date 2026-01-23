@@ -4,6 +4,6 @@
   "description": "Slack voting plugin for Nomic-style proposals",
   "private": true,
   "dependencies": {
-    "@vercel/kv": "^2.0.0"
+    "redis": "^4.6.0"
   }
 }
