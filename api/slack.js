@@ -78,7 +78,7 @@ export default async function handler(req, res) {
         });
       }
 
-      state.votes[userId] = command.toLowerCase();
+      state.votes[userId] = { vote: command.toLowerCase(), name: userName };
       await setState(channelId, state);
 
       const voteCount = Object.keys(state.votes).length;
@@ -118,12 +118,11 @@ export default async function handler(req, res) {
         });
       }
 
-      const yesVotes = voters.filter(([, v]) => v === "yes").length;
-      const noVotes = voters.filter(([, v]) => v === "no").length;
+      const yesVotes = voters.filter(([, v]) => v.vote === "yes").length;
+      const noVotes = voters.filter(([, v]) => v.vote === "no").length;
 
-      // We need to get user names - for now we'll show user IDs formatted as mentions
       const voteList = voters
-        .map(([uid, vote]) => `<@${uid}>: ${vote.toUpperCase()}`)
+        .map(([, v]) => `${v.name}: ${v.vote.toUpperCase()}`)
         .join("\n");
 
       return res.json({
