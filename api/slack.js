@@ -62,10 +62,20 @@ export default async function handler(req, res) {
       }
       await clearState(channelId);
       await setState(channelId, { proposal: argument, votes: {} });
-      return res.json({
-        response_type: "in_channel",
-        text: `*New Proposal:*\n${argument}`,
+
+      // Send ephemeral confirmation to the user
+      res.json({
+        response_type: "ephemeral",
+        text: `Your proposal has been submitted:\n${argument}`,
       });
+
+      // Post public announcement (won't show the slash command)
+      await postToResponseUrl(responseUrl, {
+        response_type: "in_channel",
+        text: `*New Proposal from ${userName}:*\n${argument}`,
+      });
+
+      return;
     }
 
     case "yes":
