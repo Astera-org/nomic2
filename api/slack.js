@@ -63,19 +63,17 @@ export default async function handler(req, res) {
       await clearState(channelId);
       await setState(channelId, { proposal: argument, votes: {} });
 
-      // Send ephemeral confirmation to the user
-      res.json({
-        response_type: "ephemeral",
-        text: `Your proposal has been submitted:\n${argument}`,
-      });
-
-      // Post public announcement (won't show the slash command)
+      // Post public announcement first (before res.json ends the serverless function)
       await postToResponseUrl(responseUrl, {
         response_type: "in_channel",
         text: `*New Proposal from ${userName}:*\n${argument}`,
       });
 
-      return;
+      // Send ephemeral confirmation to the proposer
+      return res.json({
+        response_type: "ephemeral",
+        text: `Your proposal has been submitted:\n${argument}`,
+      });
     }
 
     case "yes":
@@ -94,19 +92,36 @@ export default async function handler(req, res) {
       const voteCount = Object.keys(state.votes).length;
       const voteWord = command.toUpperCase();
 
-      // Send ephemeral response to voter
-      res.json({
-        response_type: "ephemeral",
-        text: `You voted *${voteWord}* on:\n${state.proposal}\n\n${voteCount} vote${voteCount === 1 ? "" : "s"} so far`,
-      });
-
-      // Send public notification
+      // Send public notification first (before res.json ends the serverless function)
       await postToResponseUrl(responseUrl, {
         response_type: "in_channel",
         text: "a vote has been cast",
       });
 
-      return;
+      // Send ephemeral response to voter
+      return res.json({
+        response_type: "ephemeral",
+        text: `You voted *${voteWord}* on:\n${state.proposal}\n\n${voteCount} vote${voteCount === 1 ? "" : "s"} so far`,
+      });
+    }
+
+    case "status": {
+      const state = await getState(channelId);
+      if (!state.proposal) {
+        return res.json({
+          response_type: "ephemeral",
+          text: "No active proposal.",
+        });
+      }
+
+      const voteCount = Object.keys(state.votes).length;
+
+      await postToResponseUrl(responseUrl, {
+        response_type: "in_channel",
+        text: `*Current Proposal:* ${state.proposal}\n\n${voteCount} vote${voteCount === 1 ? "" : "s"} cast so far.`,
+      });
+
+      return res.json({ response_type: "ephemeral", text: "" });
     }
 
     case "reveal": {
@@ -144,7 +159,7 @@ export default async function handler(req, res) {
     default: {
       return res.json({
         response_type: "ephemeral",
-        text: "Commands:\n• `/nomic new <proposal>` - Start a new vote\n• `/nomic yes` - Vote yes\n• `/nomic no` - Vote no\n• `/nomic reveal` - Show all votes",
+        text: "Commands:\n• `/nomic new <proposal>` - Start a new vote\n• `/nomic yes` - Vote yes\n• `/nomic no` - Vote no\n• `/nomic status` - Show current proposal and vote count\n• `/nomic reveal` - Show all votes",
       });
     }
   }
